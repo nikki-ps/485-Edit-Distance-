@@ -1,0 +1,209 @@
+#include <iostream>
+#include<string>
+#include<iomanip>
+#include <algorithm>  
+using namespace std;
+//function that helps with alignment
+string align_choice(int chart[50][50],int row, int col);
+
+int main() {
+	//strings to hold user inputted words used in calculation
+	string word1;
+	string word2;
+
+	cout << "Enter the first word: ";
+	cin >> word1;
+	cout << "Enter the second word: ";
+	cin >> word2;
+
+	//adding a blank space before each word to assist with matrix formation
+	word1 = " " + word1;
+	word2 = " " + word2;
+
+	//initializing 2D array to hold allignment matrix
+	//set to 50x50 to be able to hold ever word in English language
+	int matrix[50][50];
+	//sets up number of columns, and then number of rows for matrix
+	for (int i = 0; i < word2.length(); i++)
+	{
+		matrix[0][i] = i;
+	}
+	for (int i = 0; i < word1.length(); i++)
+	{
+		matrix[i][0] = i;
+	}
+	//current row and current column integers to help track position in array or matrix
+	int cur_row = 0;
+	int cur_col = 0;
+	
+	//iterators for word 1 (it1) and word 2 (it2) to iterate through lenght of strings when building matrix
+	string::iterator it1;
+	string::iterator it2;
+
+	/*BUILDING ALIGNMENT MATRIX
+	below we have a for loop that goes through the length of word 1, or number of rows. Inside this for loop we 
+	iterate through every column in that row in another for loop using the length of word 2. First we check if we
+	are still in the first row or column, and if we are we will fill in the matrix with the corresponding value.
+	If we are not in row 0 or column 0, we find out the values for all edit moves (inserting, substituting, or deleting),
+	then we compare the characters in the string for the current position in the matrix. If the letters match, we insert the value
+	of substituting, or a diagonal move into the the alignment matrix. If they are not matching, first we find the minimul value
+	out of the three moves, or positions (above current cell, diagonal to current cell, or to the left of current cell).
+	With that minimum value, we incure a penalty of plus one, and then insert that value into the matrix. */
+	for (it1 = word1.begin(); it1 != word1.end(); it1++) {
+		for (it2 = word2.begin(); it2 != word2.end(); it2++)
+		{
+			int matrix_input;
+			if (cur_row == 0) {
+				matrix_input = matrix[0][cur_col];
+			}
+			else if (cur_row != 0 && cur_col == 0) {
+				matrix_input = matrix[cur_row][0];
+			}
+			else if (cur_row != 0 && cur_col != 0) {
+				int insertion = matrix[cur_row][cur_col - 1];
+				int substitute = matrix[cur_row - 1][cur_col - 1];
+				int deletion = matrix[cur_row - 1][cur_col];
+
+				if (word1[cur_row] == word2[cur_col]) {
+					matrix_input = substitute;
+				}
+				else {
+					matrix_input = (min(insertion, min(substitute, deletion)) + 1);
+				}
+			}
+			matrix[cur_row][cur_col] = matrix_input;
+			cur_col++;
+		}
+		cur_col = 0;
+		cur_row++;
+	}
+	//code to build and format the alignment matrix
+	cout << "    ";
+	for (int i = 0; i < word2.length(); i++)
+	{
+		cout << word2[i] << " ";
+	}
+	cout << endl << "  ";
+	for (int i = 0; i <= word2.length(); i++)
+	{
+		cout << "--";
+	}
+	cout << endl;
+	//iterates through 2D array to fill out all cells in alignment matrix
+	for (int i = 0; i < word1.length(); i++)
+	{
+		cout << word1[i] << " | ";
+		for (int j = 0; j < word2.length(); j++)
+		{
+			cout << matrix[i][j] << " ";
+		}
+
+		cout << endl;
+	}
+	cout << endl << endl;
+	/* ALIGNMENT AND EDIT DISTANCE
+	* First we find the edit distance by simply taking the value that is in the bottom right hand corner
+	* of the alignment matrix. Then by iterating through or matrix in reverse (i.e. starting from the bottom
+	* right hand corner instead of the top) we build our alignment. First we create variables to hold lengths
+	* of the two strings, "L1" and "L2", respectively. We also create strings to hold the optimal path move ("move"), and the 
+	* alignment strings for the two words ("first" and "second")..
+	* We then find out which word is the longest (stored in "max"), and use that value as the number of times we iterate 
+	* through the following for-loop. If the words are the same length the length of the first word is used. (it wouldn't matter...)
+	* 
+	* Now, in our for loop we first check if either of the words have already been completely iterated through ("L2==0" or "L1==0").
+	* If so we push back "_" into the completed word, and then push back the next letter for the not-completed word.
+	* If neither word is at it's end, we call the function "align_choice" using our current position.
+	* 
+	* This function retruns a string representing the optimal move, which is defined by the traversal movement that 
+	* would take you to the cell with the minimum value. if the values are the same for all movements, the diagonal 
+	* choice is used.("u" for moving up, "d" for moving diagonally, or "l" for moving left).
+	*
+	* If the optimal move is "d" or diagonal, a letter is added to both strings from the current row and column positions, 
+	* and L1 and L2 are decremented.
+	* If the optimal move is "u" or up, the letter of the current matrix position is added to word one, and a "_" is added to
+	* the second word. L1 is decremented to represent moving up a row.
+	* If the optimal move is "l" or left, the letter of the current matrix position is added to word two, and a "_" is added to
+	* the first word. L2 is decremented to represent moving to the column to the left.
+	* 
+	* Once the loop has ran through the length of the largest string, it ends. Using C++ algorithm library reversal function
+	* the strings are then reversed, because they were constructed in reverse.
+	* The alignment of the strings is then printed.
+*/
+	string move, first, second;
+	char insert1, insert2;
+	int max;
+	int L1 = word1.length()-1;
+	int L2 = word2.length()-1;
+
+	cout << "The edit distance is: " << matrix[L1][L2] << endl;
+	if (L1 > L2)
+		max = L1;
+	else if (L1 < L2)
+		max = L2;
+	else
+		max = L1;
+	for (int i = max; i > 0; i--)
+	{
+		if (L2 == 0)
+		{
+			insert1 = word1[L1];
+			first.push_back(insert1);
+			second.push_back('_');
+			L1--;
+		}
+		else if (L1 == 0)
+		{
+			insert2 = word2[L2];
+			first.push_back('_');
+			second.push_back(insert2);
+			L2--;
+		}
+		else
+		{
+			move = align_choice(matrix, L1, L2);
+			if (move == "d")
+			{
+				insert1 = word1[L1];
+				insert2 = word2[L2];
+				first.push_back(insert1);
+				second.push_back(insert2);
+				L1--;
+				L2--;
+			}
+			else if (move == "u")
+			{
+				insert1 = word1[L1];
+				first.push_back(insert1);
+				second.push_back('_');
+				L1--;
+			}
+			else if (move == "l")
+			{
+				insert2 = word2[L2];
+				first.push_back('_');
+				second.push_back(insert2);
+				L2--;
+			}
+		}
+	}
+	reverse(first.begin(),first.end());
+	reverse(second.begin(), second.end());
+	cout << "Alignment" << endl;
+	cout << first << endl;
+	cout << second << endl;
+
+}
+
+string align_choice(int chart[50][50], int row, int col)
+{
+	int left = chart[row][col - 1];
+	int diag = chart[row - 1][col - 1];
+	int upper = chart[row - 1][col];
+	int choice = diag;
+	if (choice > left)
+		return "l";
+	else if (choice > upper)
+		return "u";
+	else
+		return "d";
+}
